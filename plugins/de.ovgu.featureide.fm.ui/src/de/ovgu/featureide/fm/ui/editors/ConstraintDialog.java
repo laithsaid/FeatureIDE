@@ -22,8 +22,10 @@ package de.ovgu.featureide.fm.ui.editors;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.operations.AbstractOperation;
@@ -648,12 +650,11 @@ public class ConstraintDialog implements GUIDefaults {
 	 * @return List of all dead Features, empty if no feature is caused to be
 	 *         dead
 	 */
-	public List<Feature> getDeadFeatures(String input, FeatureModel model) {
+	public Set<Feature> getDeadFeatures(String input, FeatureModel model) {
 		Collection<Feature> deadFeaturesBefore = null;
+		Set<Feature> deadFeaturesAfter = new HashSet<Feature>();
 		FeatureModel clonedModel = model.clone();
-
 		NodeReader nodeReader = new NodeReader();
-
 		Node propNode = nodeReader.stringToNode(input, clonedModel.getFeatureNames());
 
 		if (propNode != null) {
@@ -665,12 +666,9 @@ public class ConstraintDialog implements GUIDefaults {
 			clonedModel.handleModelDataChanged();
 		}
 
-		List<Feature> deadFeaturesAfter = new ArrayList<Feature>();
-		for (Feature l : clonedModel.getAnalyser().getDeadFeatures()) {
-			if (!deadFeaturesBefore.contains(l)) {
-				deadFeaturesAfter.add(l);
-
-			}
+		deadFeaturesAfter.addAll(clonedModel.getAnalyser().getDeadFeatures());
+		if (deadFeaturesAfter != null) {
+			deadFeaturesAfter.removeAll(deadFeaturesBefore);
 		}
 		return deadFeaturesAfter;
 	}
@@ -738,7 +736,7 @@ public class ConstraintDialog implements GUIDefaults {
 			FMUIPlugin.getDefault().logError(e);
 		}
 		
-		List<Feature> deadFeatures = getDeadFeatures(con, featureModel);
+		Set<Feature> deadFeatures = getDeadFeatures(con, featureModel);
 		if (!deadFeatures.isEmpty()) {
 			printHeaderWarning(getDeadFeatureString(deadFeatures));
 			return false;
@@ -789,7 +787,7 @@ public class ConstraintDialog implements GUIDefaults {
 	 * @param deadFeatures
 	 *            List of dead Features
 	 * */
-	private String getDeadFeatureString(List<Feature> deadFeatures) {
+	private String getDeadFeatureString(Set<Feature> deadFeatures) {
 		StringBuilder featureString = new StringBuilder();
 		featureString.append("Constraint causes the following features to be dead: ");
 		int count = 0;
@@ -809,9 +807,9 @@ public class ConstraintDialog implements GUIDefaults {
 				featureCount++;
 
 			}
-			if (deadFeatures.indexOf(l) == deadFeatures.size() - 1) {
-
-			}
+//			if (deadFeatures.indexOf(l) == deadFeatures.size() - 1) {
+//
+//			}
 
 		}
 		if (featureCount < deadFeatures.size()) {
